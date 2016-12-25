@@ -8,7 +8,7 @@ class MenuItem(models.Model):
     price = models.DecimalField(max_digits=4, decimal_places=2)
     
     def __str__(self):
-        return self.name + "    $" + self.price
+        return self.name + "    $" + str(self.price)
     
     class Meta:
         ordering = ('created',)
@@ -25,9 +25,10 @@ class Order(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey('auth.User', related_name='orders', on_delete=models.SET_NULL, null=True)
     address = models.CharField(max_length=250)
-    time_to_deliver = models.DateTimeField()
-    time_delivered = models.DateTimeField(blank=True)
+    time_to_deliver = models.DateTimeField(blank=True, null=True)
+    time_delivered = models.DateTimeField(blank=True, null=True)
     status = models.CharField(default='N', choices=STATUS_CHOICES, max_length=1)
+    total_price = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
     
     def is_delivered(self):
         return self.status == 'D'
@@ -37,9 +38,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    menu_item = models.ForeignKey(MenuItem, related_name='menu_item', on_delete=models.SET_NULL, null=True)
-    order = models.ForeignKey(Order, related_name='order_item', on_delete=models.CASCADE)
+    menu_item = models.ForeignKey(MenuItem, related_name='menu_item', on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, related_name='order_items', on_delete=models.CASCADE, null=True)
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
-    
-    def __str__(self):
-        return self.quantity + " x " + menu_item
+    price = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
