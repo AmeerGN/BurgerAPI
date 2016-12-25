@@ -8,7 +8,6 @@ from rest_framework.schemas import get_schema_view
 router = DefaultRouter()
 router.register(r'orders', views.OrderViewSet)
 router.register(r'menuItems', views.MenuItemViewSet)
-router.register(r'users', views.UserViewSet)
 
 schema_view = get_schema_view(title='Burger API')
 

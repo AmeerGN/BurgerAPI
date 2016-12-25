@@ -42,3 +42,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, related_name='order_items', on_delete=models.CASCADE, null=True)
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     price = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
+    
+    def save(self, *args, **kwargs):
+        self.price = self.menu_item.price * self.quantity
+        super(OrderItem, self).save(*args, **kwargs)
