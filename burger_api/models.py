@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from django.core.validators import MinValueValidator
 
@@ -25,7 +26,7 @@ class Order(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey('auth.User', related_name='orders', on_delete=models.SET_NULL, null=True)
     address = models.CharField(max_length=250)
-    time_to_deliver = models.DateTimeField(blank=True, null=True)
+    time_to_deliver = models.DateTimeField(blank=True, validators=[MinValueValidator(timezone.now())])
     time_delivered = models.DateTimeField(blank=True, null=True)
     status = models.CharField(default='N', choices=STATUS_CHOICES, max_length=1)
     total_price = models.DecimalField(max_digits=4, decimal_places=2, blank=True, null=True)
