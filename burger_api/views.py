@@ -18,9 +18,7 @@ class UserViewSet(viewsets.ViewSet):
     permission_classes=(permissions.IsAdminUser,)
     
     def retrieve(self, request, pk=None):
-        queryset = User.objects.all()
-        user = get_object_or_404(queryset, pk=pk)
-        serializer = self.serializer_class(queryset, many=True, context={'request': request})
+        serializer = self.serializer_class(User.objects.filter(pk=pk), many=True, context={'request': request})
         return Response(serializer.data)
     
     @detail_route(methods=['get'], permission_classes=(permissions.IsAdminUser,))
@@ -118,12 +116,12 @@ class StatisticsViewSet(viewsets.ViewSet):
 class MenuItemViewSet(viewsets.ModelViewSet):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
-    permission_classes = (permissions.IsAuthenticated, IsAdminOrReadOnly)
+    permission_classes = (IsAdminOrReadOnly,)
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = (permissions.IsAuthenticated, IsAllowedToOrder)
+    permission_classes = (IsAllowedToOrder,)
     
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
