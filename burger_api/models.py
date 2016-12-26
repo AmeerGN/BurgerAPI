@@ -24,7 +24,7 @@ class Order(models.Model):
     )    
     
     created = models.DateTimeField(auto_now_add=True)
-    owner = models.ForeignKey('auth.User', related_name='orders', on_delete=models.SET_NULL, null=True)
+    owner = models.ForeignKey('auth.User', related_name='orders', on_delete=models.SET_NULL, null=True, editable=False)
     address = models.CharField(max_length=250)
     time_to_deliver = models.DateTimeField(blank=True, validators=[MinValueValidator(timezone.now())])
     time_delivered = models.DateTimeField(blank=True, null=True)
