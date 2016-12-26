@@ -67,6 +67,31 @@ class StatisticsViewSet(viewsets.ViewSet):
                 content.append({'user': user.username, 'average spending': average_spending})
         return Response(content)
     
+    @list_route(methods=['get'], renderer_classes = (JSONRenderer, ))
+    def monthly_revenue_report(self, request):
+        now = timezone.now()
+        year = now.year
+        if request.query_params and request.query_params['year']:
+            try:
+                year = int(request.query_params['year'])
+            except:
+                year = now.year
+        print(year)
+        months = []
+        content = {}
+        content['year'] = year
+        for i in range(0, 12):
+            current_month = i + 1
+            start_date = datetime.datetime(year, current_month, 1, 0, 0, 0, 0, now.tzinfo)
+            end_date = datetime.datetime(year if current_month < 12 else (year + 1), (current_month % 12) + 1, 1, 0, 0, 0, 0, now.tzinfo)
+            orders = Order.objects.filter(created__range = [start_date, end_date])
+            month_revenue = Decimal('0.0')
+            for order in orders:
+                month_revenue += order.total_price
+            months.append({'month': start_date.strftime("%B"), 'revenue': month_revenue})
+        content['report'] = months
+        return Response(content)
+    
     def get_most_ordering_customer(self, year_ago, now):
         best_user_id = -1
         highest_num_of_orders = 0
