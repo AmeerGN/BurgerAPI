@@ -36,18 +36,13 @@ class UserViewSet(viewsets.ViewSet):
     def best_customer(self, request):
         now = timezone.now()
         year_ago = datetime.datetime(now.year - 1, now.month, now.day, now.hour, now.minute, now.second, now.microsecond, now.tzinfo)
-        orders_in_a_year = Order.objects.filter(created__range = [year_ago, now])
         highest_num_of_orders = 0
-        user_order_map = dict()
         best_user_id = -1
-        for order in orders_in_a_year:
-            order_owner = order.owner
-            if order_owner not in user_order_map:
-                user_order_map[order_owner] = set()
-            user_order_map[order_owner].add(order)
-            if len(user_order_map[order_owner]) > highest_num_of_orders:
-                highest_num_of_orders = len(user_order_map[order_owner])
-                best_user_id = order_owner.id
+        for user in User.objects.all():
+            num_of_orders = len(Order.objects.filter(owner=user, created__range=[year_ago, now]))
+            if num_of_orders > highest_num_of_orders:
+                highest_num_of_orders = num_of_orders
+                best_user_id = user.id
         best_user = User.objects.filter(pk=best_user_id)
         serializer = self.serializer_class(best_user, many=True, context={'request': request})
         return Response(serializer.data)
