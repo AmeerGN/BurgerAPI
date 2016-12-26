@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from .models import MenuItem, Order
 from .serializers import MenuItemSerializer, OrderSerializer, UserSerializer
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsAllowedToOrder
 from rest_framework import permissions, renderers, viewsets
 from rest_framework.decorators import list_route, detail_route
 from rest_framework.response import Response
@@ -31,7 +31,7 @@ class MenuItemViewSet(viewsets.ModelViewSet):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsAllowedToOrder)
     
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
