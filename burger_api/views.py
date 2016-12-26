@@ -10,6 +10,7 @@ from rest_framework import permissions, renderers, viewsets
 from rest_framework.decorators import list_route, detail_route
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.renderers import JSONRenderer
 
 class UserViewSet(viewsets.ViewSet):
     queryset = User.objects.all()
@@ -49,7 +50,22 @@ class StatisticsViewSet(viewsets.ViewSet):
         best_user_id = best_user_criterias[criteria](year_ago, now)            
         best_user = User.objects.filter(pk=best_user_id)
         serializer = self.serializer_class(best_user, many=True, context={'request': request})
+        print serializer.data
         return Response(serializer.data)
+    
+    @list_route(methods=['get'], renderer_classes = (JSONRenderer, ))
+    def average_spending(self, request):
+        users = User.objects.all()
+        content = []
+        for user in users:
+            total_spending = Decimal('0.0')
+            user_orders = Order.objects.filter(owner=user)
+            if user_orders and user_orders.count:
+                for order in user_orders:
+                    total_spending += order.total_price
+                average_spending = total_spending / len(user_orders)
+                content.append({'user': user.username, 'average spending': average_spending})
+        return Response(content)
     
     def get_most_ordering_customer(self, year_ago, now):
         best_user_id = -1
