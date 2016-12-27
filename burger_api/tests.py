@@ -179,7 +179,7 @@ class OrderViewTests(APITestCase):
             ]
         }, format='json')
         client.logout()
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         
     def test_retrieve_order(self):
         normal_user = make_normal_user()
