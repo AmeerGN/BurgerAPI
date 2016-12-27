@@ -12,6 +12,7 @@ factory = APIRequestFactory(enforce_csrf_checks=True)
 def make_super_user():
     user = User.objects.create_user('SuperUser', password='password')
     user.is_superuser = True
+    user.is_staff = True
     user.save()
     return user
 
@@ -40,12 +41,12 @@ class UserViewTests(APITestCase):
         response = UserViewSet.as_view({'get': 'orders'})(request, pk=1)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
     
-#   def test_admin_retrieve_user_orders(self):
-#        user = make_super_user()
-#        request = factory.get(reverse('user-orders', args=(1,)))
-#        force_authenticate(request, user=user)
-#        response = UserViewSet.as_view({'get': 'orders'})(request, pk=1)
-#        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_admin_retrieve_user_orders(self):
+        user = make_super_user()
+        request = factory.get(reverse('user-orders', args=(1,)))
+        force_authenticate(request, user=user)
+        response = UserViewSet.as_view({'get': 'orders'})(request, pk=1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 class MenuItemViewTests(APITestCase):
     def test_public_access_menu_items(self):
@@ -272,3 +273,65 @@ class OrderViewTests(APITestCase):
         
         response = client.get('/burger/orders/' + str(order_id3) + '/', format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+class StatisticsViewTests(APITestCase):
+    def test_best_customer(self):
+        menu_item1 = create_menu_item('item cheap', '', '5.00')
+        menu_item2 = create_menu_item('item expensive', '', '20.65')
+        super_user = make_super_user()
+        normal_user = make_normal_user()
+        now = timezone.now()
+        delivery_date = datetime(now.year, now.month, now.day + 1, 0, 0, 0, 0, now.tzinfo)
+        
+        client = self.client
+        client.login(username='NormalUser', password='password')
+        # create one order with a total of 30.65
+        response = client.post('/burger/orders/', {
+            'address': 'Ramallah',
+            'time_to_deliver': str(delivery_date),
+            'order_items': [
+                {
+                    'menu_item': str(menu_item1.pk),
+                    'quantity': '2'
+                },
+                {
+                    'menu_item': str(menu_item2.pk),
+                    'quantity': '1'
+                }
+            ]
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        client.logout()
+        
+        client.login(username='SuperUser', password='password')
+        # create two orders with a total of 25.65
+        response = client.post('/burger/orders/', {
+            'address': 'Ramallah',
+            'time_to_deliver': str(delivery_date),
+            'order_items': [
+                {
+                    'menu_item': str(menu_item1.pk),
+                    'quantity': '1'
+                }
+            ]
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        response = client.post('/burger/orders/', {
+            'address': 'Ramallah',
+            'time_to_deliver': str(delivery_date),
+            'order_items': [
+                {
+                    'menu_item': str(menu_item2.pk),
+                    'quantity': '1'
+                }
+            ]
+        }, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        response = client.get('/burger/statistics/best_customer/', {'criteria': 'number'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['id'], super_user.pk)
+        response = client.get('/burger/statistics/best_customer/', {'criteria': 'revenue'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data[0]['id'], normal_user.pk)
+        client.logout()
