@@ -14,7 +14,7 @@ router.register(r'menuItems', views.MenuItemViewSet)
 schema_view = get_schema_view(title='Burger API')
 
 # The API URLs are now determined automatically by the router.
-# Additionally, we include the login URLs for the browsable API.
+# Additionally, include the login URLs for the browsable API.
 urlpatterns = [
     url('^schema/$', schema_view),
     url(r'^', include(router.urls)),

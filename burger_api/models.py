@@ -3,6 +3,9 @@ from django.db import models
 from django.core.validators import MinValueValidator
 
 class MenuItem(models.Model):
+    """
+    MenuItem model, defines the availble menu items that can be ordered
+    """
     created = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(max_length=400, help_text="What is included in this tem, e.g. cheese, brown bread, etc", blank=True)
@@ -16,6 +19,9 @@ class MenuItem(models.Model):
         
 
 class Order(models.Model):
+    """
+    Order made based on the selection of menu items and their quantities
+    """
     STATUS_CHOICES = (
         ('N', 'New'),
         ('P', 'Processing'),
@@ -39,6 +45,10 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
+    """
+    This is the item selected inside an order, it refers to the original menu item selected but with quantity and computed price
+    (item price * quantity)
+    """
     menu_item = models.ForeignKey(MenuItem, related_name='menu_item', on_delete=models.CASCADE)
     order = models.ForeignKey(Order, related_name='order_items', on_delete=models.CASCADE, null=True)
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])

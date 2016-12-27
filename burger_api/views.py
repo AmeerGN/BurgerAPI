@@ -13,6 +13,9 @@ from rest_framework.request import Request
 from rest_framework.renderers import JSONRenderer
 
 class UserViewSet(viewsets.ViewSet):
+    """
+    Used to retrieve user's orders by the admin (the user can retrieve his own orders using '/burger/orders/')
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes=(permissions.IsAdminUser,)
@@ -30,12 +33,20 @@ class UserViewSet(viewsets.ViewSet):
         return Response(serializer.data)
         
 class StatisticsViewSet(viewsets.ViewSet):
+    """
+    Used to retrieve different statistics (admin use only)
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes=(permissions.IsAdminUser,)
     
     @list_route(methods=['get'])
     def best_customer(self, request):
+        """
+        Return information about best customer in a year based on the criteria selected:
+        1. 'number': the most ordering customer
+        2. 'revenue': the most paying customer
+        """
         criteria = 'number' # the default criteria
         if request.query_params and request.query_params['criteria']:
             criteria = request.query_params['criteria']
@@ -53,6 +64,9 @@ class StatisticsViewSet(viewsets.ViewSet):
     
     @list_route(methods=['get'], renderer_classes = (JSONRenderer, ))
     def average_spending(self, request):
+        """
+        Return the average spending per customer
+        """
         users = User.objects.all()
         content = []
         for user in users:
@@ -67,14 +81,17 @@ class StatisticsViewSet(viewsets.ViewSet):
     
     @list_route(methods=['get'], renderer_classes = (JSONRenderer, ))
     def monthly_revenue_report(self, request):
+        """
+        Return the monthly revenue in a year
+        """
         now = timezone.now()
+        # read year from parameter, default is current year
         year = now.year
         if request.query_params and request.query_params['year']:
             try:
                 year = int(request.query_params['year'])
             except:
                 year = now.year
-        print(year)
         months = []
         content = {}
         content['year'] = year
@@ -114,22 +131,31 @@ class StatisticsViewSet(viewsets.ViewSet):
         return best_user_id
 
 class MenuItemViewSet(viewsets.ModelViewSet):
+    """
+    Allow public access to retrieve MenuItem/s
+    Allow admin access only to create a MenuItem
+    """
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
     permission_classes = (IsAdminOrReadOnly,)
 
 class OrderViewSet(viewsets.ModelViewSet):
+    """
+    Allow access to orders only by authinticated users
+    """
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = (permissions.IsAuthenticated, IsAllowedToOrder,)
     
     def perform_create(self, serializer):
+        # set the owner before saving
         serializer.save(owner=self.request.user)
     
     def get_queryset(self):
+        # admin can retrieve all the orders
         if self.request.user.is_superuser:
             return Order.objects.all()
-        else:
+        else: # normal user retrieve only his orders
             return Order.objects.filter(owner=self.request.user)
     
 
